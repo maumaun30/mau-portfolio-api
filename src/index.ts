@@ -20,7 +20,7 @@ const start = async () => {
         frameAncestors: ["'none'"],
       },
     },
-    crossOriginResourcePolicy: { policy: "same-site" },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "no-referrer" },
     hsts: {
       maxAge: 15552000,
@@ -34,8 +34,23 @@ const start = async () => {
     .map((o) => o.trim())
     .filter(Boolean);
 
+  const allowedDomain = process.env.ALLOWED_DOMAIN ?? "";
+  const subdomainRegex = allowedDomain
+    ? new RegExp(
+        `^https?://([a-z0-9-]+\\.)?${allowedDomain.replace(".", "\\.")}$`,
+      )
+    : null;
+
   await app.register(cors, {
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+
+      if (subdomainRegex && subdomainRegex.test(origin)) return cb(null, true);
+
+      cb(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     methods: ["GET", "POST", "OPTIONS"],
   });
 
