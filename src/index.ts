@@ -1,17 +1,17 @@
-import { config as loadEnv } from "dotenv";
+import "./instrument.js";
+import * as Sentry from "@sentry/node";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import { contactRoute } from "./routes/contact.js";
-
-loadEnv();
-loadEnv({ path: ".env.local", override: true });
 
 const start = async () => {
   const app = Fastify({
     logger: true,
     trustProxy: true,
   });
+
+  Sentry.setupFastifyErrorHandler(app);
 
   await app.register(helmet, {
     contentSecurityPolicy: {
